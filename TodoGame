@@ -1,0 +1,377 @@
+#include <iostream>
+#include <string>
+#include <vector>
+#include <chrono>
+#include <thread>
+#include <algorithm>
+#include <fstream>
+ 
+using namespace std;
+using namespace std::chrono;
+using namespace std::this_thread;
+
+enum class ExpTugas{
+    Biasa = 25,
+    Sedang = 50,
+    Sulit = 100
+};
+
+class Player{
+    string nama;
+    int level = 0;
+    int exp = 0;
+
+
+    public:
+        Player(string n, int l, int e) : nama(n), level(l), exp(e) {}
+
+        string getNama() const { return nama; }
+        int getLevel() const { return level; }
+        int getExp() const { return exp; }
+        void setData(const string& n, int l, int e) { nama = n; level = l; exp = e; }
+
+        void tampilkanKarakteristik() {
+            cout << "=============================" << endl;
+            cout << "| Nama: " << nama << "      |" << endl;
+            cout << "| Level: " << level << "    |" << endl;
+            cout << "| Exp: " << exp << "        |" << endl;
+            cout << "=============================" << endl;
+        }
+
+        void tambahExp(int tambahan) {
+            exp += tambahan;
+            cout << "Exp setelah ditambah: " << exp << endl;
+
+            while(exp >= 100) {
+                level++;
+                exp -= 100;
+                cout << "Selamat! Level Anda naik ke " << level << "!" << endl;
+            }
+        }
+};
+
+struct Jadwal {
+    string nama;
+    string tanggal;
+    string waktu;
+    string deskripsi;
+    int tingkatKesulitan;
+
+};
+vector<Jadwal> jadwalList;
+
+void berhasil(){
+        string pesan = "Jadwal berhasil ditambahkan!";
+    for (char c : pesan) {
+        cout << c << flush;
+        sleep_for(milliseconds(50));
+    }
+    cout << endl;
+}
+
+void simpanKeFile() {
+    ofstream file("jadwal.txt"); 
+    for (const auto& j : jadwalList) {
+        file << j.nama << "\n";
+        file << j.tanggal << "\n";
+        file << j.waktu << "\n";
+        file << j.deskripsi << "\n";
+        file << j.tingkatKesulitan << "\n";
+        file << "---\n"; 
+    }
+    file.close();
+}
+
+void bacaDariFile() {
+    ifstream file("jadwal.txt"); 
+    if (!file) return;
+
+    Jadwal j;
+    string line;
+
+    while (getline(file, j.nama)) {
+        getline(file, j.tanggal);
+        getline(file, j.waktu);
+        getline(file, j.deskripsi);
+        getline(file, line);
+        j.tingkatKesulitan = stoi(line); 
+        getline(file, line); 
+        jadwalList.push_back(j);
+    }
+
+    file.close(); 
+}
+
+void simpanPlayer(const Player& player) {
+    std::ofstream file("player.txt");
+    if (file) {
+        file << player.getNama() << "\n";
+        file << player.getLevel() << "\n";
+        file << player.getExp() << "\n";
+    }
+}
+
+void bacaPlayer(Player& player) {
+    std::ifstream file("player.txt");
+    if (file) {
+        std::string nama;
+        int level, exp;
+        std::getline(file, nama);
+        file >> level >> exp;
+        player.setData(nama, level, exp);
+    }
+}
+
+int main(){
+
+    bacaDariFile();
+
+    Player player("", 0, 0);
+    bacaPlayer(player);
+
+    if (player.getNama().empty()) {
+        cout << "Tidak ada data player yang ditemukan. Silakan masukkan nama player." << endl;
+        string nama;
+        cout << "Masukkan nama Player: ";
+        getline(cin, nama);
+        player.setData(nama, 0, 0);
+    } else {
+        cout << "Data player ditemukan: " << player.getNama() << endl;
+    }
+
+    int pilihjadwal;
+    Jadwal jadwalBaru;
+    bool ulangi = true;
+
+    while(ulangi)
+    { 
+        cout << "======================================================" << endl;
+        cout << "| selamat datang di program manajemen jadwal pribadi |" << endl;
+        cout << "======================================================" << endl;
+        cout << "| 1. Lihat karakteristik Player                      |" << endl;
+        cout << "| 2. Tambah Jadwal                                   |" << endl;
+        cout << "| 3. Lihat semua Jadwal                              |" << endl;
+        cout << "| 4. Hapus Jadwal                                    |" << endl;
+        cout << "| 5. cari Jadwal                                     |" << endl;
+        cout << "| 6. Selesaikan Jadwal                               |" << endl;
+        cout << "| 7. Keluar                                          |" << endl;
+        cout << "======================================================" << endl;
+        cout << "| Masukkan pilihan anda: ";
+        cin >> pilihjadwal;
+        cout << "======================================================" << endl;
+
+        switch (pilihjadwal)
+        {
+        case 1:
+            cout << "Anda memilih melihat karakteristik Player " << endl;
+            player.tampilkanKarakteristik();
+            cout << "Tekan Enter untuk kembali ke menu utama." << endl;
+            cin.ignore();
+            cin.get();
+            system("cls");
+        break;
+
+        case 2:
+            cout << "Anda memilih untuk menambah jadwal." << endl;
+            cout << "======================================================" << endl;
+            cout << "Masukkan nama jadwal: ";
+            cin.ignore();
+            getline(cin, jadwalBaru.nama);
+            cout << "Masukkan tanggal (YYYY-MM-DD): ";
+            getline(cin, jadwalBaru.tanggal);
+            cout << "Masukkan waktu (HH:MM): ";
+            getline(cin, jadwalBaru.waktu);
+            cout << "Masukkan deskripsi: ";
+            getline(cin, jadwalBaru.deskripsi);
+            cout << "Masukkan tingkat kesulitan (1: Biasa, 2: Sedang, 3: Sulit): ";
+            int tingkatKesulitan;
+            cin >> tingkatKesulitan;
+            switch (tingkatKesulitan) {
+                case 1:
+                    jadwalBaru.tingkatKesulitan = static_cast<int>(ExpTugas::Biasa);
+                    break;
+                case 2:
+                    jadwalBaru.tingkatKesulitan = static_cast<int>(ExpTugas::Sedang);
+                    break;
+                case 3:
+                    jadwalBaru.tingkatKesulitan = static_cast<int>(ExpTugas::Sulit);
+                    break;
+                default:
+                    cout << "Tingkat kesulitan tidak valid. Menggunakan Biasa sebagai default." << endl;
+                    jadwalBaru.tingkatKesulitan = static_cast<int>(ExpTugas::Biasa);
+            }
+            jadwalList.push_back(jadwalBaru);
+            cout << "======================================================" << endl;
+            berhasil();
+            cout << "Tekan Enter untuk kembali ke menu utama." << endl;
+            cin.ignore();
+            cin.get();
+            system("cls");
+        break;
+        
+        case 3:
+            cout << "Anda memilih untuk melihat jadwal." << endl;
+            if (jadwalList.empty())  
+            {
+                cout << "Tidak ada jadwal yang tersedia." << endl;
+                sleep_for(milliseconds(1000));
+                system("cls");
+            } else {
+                vector<Jadwal> tempList = jadwalList;
+
+                sort(tempList.begin(), tempList.end(), [](const Jadwal& a, const Jadwal& b) {
+                return a.tanggal + " " + a.waktu < b.tanggal + " " + b.waktu;
+                });
+
+                for (size_t i = 0; i < tempList.size(); i++)
+                {
+                    cout << "======================================================" << endl;
+                    cout << "Jadwal " << i + 1  << endl;
+                    cout << "Nama: " << tempList[i].nama << endl;
+                    cout << "Tanggal: " << tempList[i].tanggal << endl;
+                    cout << "Waktu: " << tempList[i].waktu << endl;
+                    cout << "Deskripsi: " << tempList[i].deskripsi << endl;
+                    cout << "Tingkat Kesulitan: ";
+                    switch (tempList[i].tingkatKesulitan) {
+                        case static_cast<int>(ExpTugas::Biasa):
+                            cout << "Biasa" << endl;
+                            break;
+                        case static_cast<int>(ExpTugas::Sedang):
+                            cout << "Sedang" << endl;
+                            break;
+                        case static_cast<int>(ExpTugas::Sulit):
+                            cout << "Sulit" << endl;
+                            break;
+                        default:
+                            cout << "Tidak diketahui" << endl;
+                    }
+                    cout << "======================================================" << endl;
+                }
+            }
+            cout << "Total Jadwal: " << jadwalList.size() << endl;
+            cout << "Tekan Enter untuk kembali ke menu utama." << endl;
+            cin.ignore();
+            cin.get();
+            system("cls");
+        break;
+
+        case 4:
+            cout << "Anda memilih untuk menghapus jadwal." << endl;
+            if (jadwalList.empty())  
+            {
+                cout << "Tidak ada jadwal yang tersedia untuk dihapus." << endl;
+            } else {
+                int hapusIndex;
+                cout << "Masukkan nomor jadwal yang ingin dihapus (1 - " << jadwalList.size() << "): ";
+                cin >> hapusIndex;
+
+                if (hapusIndex < 1 || hapusIndex > jadwalList.size()) {
+                    cout << "Nomor jadwal tidak valid." << endl;
+                } else {
+                    jadwalList.erase(jadwalList.begin() + hapusIndex - 1);
+                    cout << "Jadwal berhasil dihapus." << endl;
+                }
+            }
+            sleep_for(milliseconds(1000));
+            cout << "Tekan Enter untuk kembali ke menu utama." << endl;
+            cin.ignore();
+            cin.get();
+            system("cls");
+        break;
+
+        case 5: 
+            cout << "Anda memilih untuk mencari jadwal." << endl;
+            if (jadwalList.empty())  
+            {
+                cout << "Tidak ada jadwal yang tersedia untuk dicari." << endl;
+                sleep_for(milliseconds(2000));
+                system("cls");
+            } else {
+                string cariNama;
+                cout << "Masukkan nama jadwal yang ingin dicari: ";
+                cin.ignore();
+                getline(cin, cariNama);
+                
+                bool ditemukan = false;
+                for (const auto& jadwal : jadwalList) {
+                    if (jadwal.nama == cariNama) {
+                        cout << "======================================================" << endl;
+                        cout << "| Jadwal ditemukan:" << endl;
+                        cout << "| Nama: " << jadwal.nama << endl;
+                        cout << "| Tanggal: " << jadwal.tanggal << endl;
+                        cout << "| Waktu: " << jadwal.waktu << endl;
+                        cout << "| Deskripsi: " << jadwal.deskripsi << endl;
+                        cout << "| Tingkat Kesulitan: ";
+                        switch (jadwal.tingkatKesulitan) {
+                            case static_cast<int>(ExpTugas::Biasa):
+                                cout << "Biasa" << endl;
+                                break;
+                            case static_cast<int>(ExpTugas::Sedang):
+                                cout << "Sedang" << endl;
+                                break;
+                            case static_cast<int>(ExpTugas::Sulit):
+                                cout << "Sulit" << endl;
+                                break;
+                            default:
+                                cout << "Tidak diketahui" << endl;
+                        }
+                        cout << "======================================================" << endl;
+                        ditemukan = true;
+                        break;
+                    }
+                }
+                
+                if (!ditemukan) {
+                    cout << "Jadwal dengan nama '" << cariNama << "' tidak ditemukan." << endl;
+                }
+            }
+            cout << "Tekan Enter untuk kembali ke menu utama." << endl;
+            cin.ignore();
+            cin.get();
+            system("cls");
+        break;
+
+        case 6:
+            cout << "Anda memilih untuk menyelesaikan jadwal." << endl;
+            if (jadwalList.empty())  
+            {
+                cout << "Tidak ada jadwal yang tersedia untuk diselesaikan." << endl;
+                sleep_for(milliseconds(2000));
+                system("cls");
+            } else {
+                int selesaiIndex;
+                cout << "Masukkan nomor jadwal yang ingin diselesaikan (1 - " << jadwalList.size() << "): ";
+                cin >> selesaiIndex;
+
+                if (selesaiIndex >= 1 && selesaiIndex <= jadwalList.size()) {
+                    cout << "Nomor jadwal tidak valid." << endl;
+                } else {
+                    Jadwal& jadwalSelesai = jadwalList[selesaiIndex - 1];
+                    cout << "Jadwal '" << jadwalSelesai.nama << "' telah diselesaikan." << endl;
+                    player.tambahExp(jadwalSelesai.tingkatKesulitan);
+                    jadwalList.erase(jadwalList.begin() + selesaiIndex - 1);
+                }
+            }
+            sleep_for(milliseconds(1000));
+            cout << "Tekan Enter untuk kembali ke menu utama." << endl;
+            cin.ignore();
+            cin.get();
+            system("cls");
+        break;
+
+        case 7:
+            simpanKeFile();
+            simpanPlayer(player);
+            cout << "Terima kasih telah menggunakan program manajemen jadwal pribadi." << endl;
+            ulangi = false;
+        break;
+
+        default:
+            cout << "Pilihan tidak valid. Silakan coba lagi." << endl;
+            sleep_for(milliseconds(1000));
+            system("cls");
+            break;
+        }
+    }
+    return 0;
+}
