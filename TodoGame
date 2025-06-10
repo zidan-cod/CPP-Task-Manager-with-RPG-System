@@ -5,6 +5,7 @@
 #include <thread>
 #include <algorithm>
 #include <fstream>
+#include <limits>
  
 using namespace std;
 using namespace std::chrono;
@@ -20,7 +21,7 @@ class Player{
     string nama;
     int level = 0;
     int exp = 0;
-
+    int tugasSelesai = 0;
 
     public:
         Player(string n, int l, int e) : nama(n), level(l), exp(e) {}
@@ -29,12 +30,21 @@ class Player{
         int getLevel() const { return level; }
         int getExp() const { return exp; }
         void setData(const string& n, int l, int e) { nama = n; level = l; exp = e; }
+        void tambahTugasSelesai() {
+            tugasSelesai++;
+            cout << "Tugas selesai: " << tugasSelesai << endl;
+        }
 
-        void tampilkanKarakteristik() {
+        int getTugasSelesai() const { return tugasSelesai; }
+        
+
+        void tampilkanKarakteristik(int tugasBelumSelesai) {
             cout << "=============================" << endl;
-            cout << "| Nama: " << nama << "      |" << endl;
-            cout << "| Level: " << level << "    |" << endl;
-            cout << "| Exp: " << exp << "        |" << endl;
+            cout << "| Nama: " << nama << endl;
+            cout << "| Level: " << level <<  endl;
+            cout << "| Exp: " << exp <<  endl;
+            cout << "| Tugas yang telah diselesaikan: " << tugasSelesai <<  endl;
+            cout << "| Tugas yang belum diselesaikan: " << tugasBelumSelesai <<  endl;
             cout << "=============================" << endl;
         }
 
@@ -122,7 +132,16 @@ void bacaPlayer(Player& player) {
     }
 }
 
-int main(){
+void Bersihkan() {
+#ifdef _WIN32
+    system("cls");
+#else
+    system("clear");
+#endif
+}
+
+int main()
+{
 
     bacaDariFile();
 
@@ -163,12 +182,13 @@ int main(){
         switch (pilihjadwal)
         {
         case 1:
+            Bersihkan();
             cout << "Anda memilih melihat karakteristik Player " << endl;
-            player.tampilkanKarakteristik();
+            player.tampilkanKarakteristik(jadwalList.size());
             cout << "Tekan Enter untuk kembali ke menu utama." << endl;
             cin.ignore();
             cin.get();
-            system("cls");
+            Bersihkan();
         break;
 
         case 2:
@@ -186,6 +206,7 @@ int main(){
             cout << "Masukkan tingkat kesulitan (1: Biasa, 2: Sedang, 3: Sulit): ";
             int tingkatKesulitan;
             cin >> tingkatKesulitan;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); 
             switch (tingkatKesulitan) {
                 case 1:
                     jadwalBaru.tingkatKesulitan = static_cast<int>(ExpTugas::Biasa);
@@ -206,7 +227,7 @@ int main(){
             cout << "Tekan Enter untuk kembali ke menu utama." << endl;
             cin.ignore();
             cin.get();
-            system("cls");
+            Bersihkan();
         break;
         
         case 3:
@@ -215,7 +236,6 @@ int main(){
             {
                 cout << "Tidak ada jadwal yang tersedia." << endl;
                 sleep_for(milliseconds(1000));
-                system("cls");
             } else {
                 vector<Jadwal> tempList = jadwalList;
 
@@ -252,7 +272,7 @@ int main(){
             cout << "Tekan Enter untuk kembali ke menu utama." << endl;
             cin.ignore();
             cin.get();
-            system("cls");
+            Bersihkan();
         break;
 
         case 4:
@@ -276,7 +296,7 @@ int main(){
             cout << "Tekan Enter untuk kembali ke menu utama." << endl;
             cin.ignore();
             cin.get();
-            system("cls");
+            Bersihkan();
         break;
 
         case 5: 
@@ -285,7 +305,6 @@ int main(){
             {
                 cout << "Tidak ada jadwal yang tersedia untuk dicari." << endl;
                 sleep_for(milliseconds(2000));
-                system("cls");
             } else {
                 string cariNama;
                 cout << "Masukkan nama jadwal yang ingin dicari: ";
@@ -294,7 +313,7 @@ int main(){
                 
                 bool ditemukan = false;
                 for (const auto& jadwal : jadwalList) {
-                    if (jadwal.nama == cariNama) {
+                    if (jadwal.nama.find(cariNama) != string::npos) {
                         cout << "======================================================" << endl;
                         cout << "| Jadwal ditemukan:" << endl;
                         cout << "| Nama: " << jadwal.nama << endl;
@@ -317,7 +336,6 @@ int main(){
                         }
                         cout << "======================================================" << endl;
                         ditemukan = true;
-                        break;
                     }
                 }
                 
@@ -328,7 +346,7 @@ int main(){
             cout << "Tekan Enter untuk kembali ke menu utama." << endl;
             cin.ignore();
             cin.get();
-            system("cls");
+            Bersihkan();
         break;
 
         case 6:
@@ -337,26 +355,26 @@ int main(){
             {
                 cout << "Tidak ada jadwal yang tersedia untuk diselesaikan." << endl;
                 sleep_for(milliseconds(2000));
-                system("cls");
             } else {
                 int selesaiIndex;
                 cout << "Masukkan nomor jadwal yang ingin diselesaikan (1 - " << jadwalList.size() << "): ";
                 cin >> selesaiIndex;
 
                 if (selesaiIndex >= 1 && selesaiIndex <= jadwalList.size()) {
-                    cout << "Nomor jadwal tidak valid." << endl;
-                } else {
                     Jadwal& jadwalSelesai = jadwalList[selesaiIndex - 1];
                     cout << "Jadwal '" << jadwalSelesai.nama << "' telah diselesaikan." << endl;
                     player.tambahExp(jadwalSelesai.tingkatKesulitan);
                     jadwalList.erase(jadwalList.begin() + selesaiIndex - 1);
-                }
+                    player.tambahTugasSelesai();
+                } else {
+                    cout << "Nomor jadwal tidak valid." << endl;
+
             }
             sleep_for(milliseconds(1000));
             cout << "Tekan Enter untuk kembali ke menu utama." << endl;
             cin.ignore();
             cin.get();
-            system("cls");
+            Bersihkan();
         break;
 
         case 7:
@@ -369,7 +387,7 @@ int main(){
         default:
             cout << "Pilihan tidak valid. Silakan coba lagi." << endl;
             sleep_for(milliseconds(1000));
-            system("cls");
+            Bersihkan();
             break;
         }
     }
